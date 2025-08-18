@@ -8,6 +8,7 @@ from app.lib import logger
 from app.models import ThreadMeta
 
 
+
 class ThreadManager:
     def __init__(self) -> None:
         self.db_file = Path(".data/threads.json")
@@ -36,6 +37,7 @@ class ThreadManager:
             logger.debug(f"saved threads: {len(self._threads)}")
         except Exception as e:
             logger.error(f"failed to save threads: {e}", exc_info=True)
+
 
     def create_module_thread(self, module: str) -> str:
         module_norm = (module or "").strip().lower()
