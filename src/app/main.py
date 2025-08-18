@@ -1,11 +1,10 @@
-# src/app/main.py
+# src\app\main.py
 from fastapi import FastAPI
-from app.api.chat import router
+from app.routes.chat_route import router
 from app.middleware.error_handler import error_handling_middleware  # central logging+errors
 
 app = FastAPI(title="Kordor Assist")
 
-# One global middleware for access logs + error handling
 app.middleware("http")(error_handling_middleware)
 
 # Routes

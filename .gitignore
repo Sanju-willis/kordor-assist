@@ -21,6 +21,8 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+# sanju
+commands.md
 
 # PyInstaller
 *.manifest

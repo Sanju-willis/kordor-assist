@@ -5,13 +5,13 @@ from pathlib import Path
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.sqlite import SqliteSaver
-from app.core.thread_manager import ThreadMeta
+from app.models import ThreadMeta
 from app.graphs import (
     build_social_workflow,
     build_analytics_workflow,
     build_home_workflow,
 )
-from app.utils.logger import logger  # use shared logger
+from app.lib import logger  # use shared logger
 
 
 def get_checkpointer() -> SqliteSaver:
@@ -37,8 +37,8 @@ class ChatService:
     @staticmethod
     async def process_message(thread_id: str, meta: ThreadMeta, user_text: str) -> str:
         try:
-            logger.info(f"process_message thread={thread_id} type={meta.thread_type}")
-            logger.debug(f"user_text='{user_text}'")
+            #logger.info(f"process_message thread={thread_id} type={meta.thread_type}")
+            #logger.debug(f"user_text='{user_text}'")
 
             # Build workflow once per call (consider caching later)
             wf = get_workflow(meta.module)

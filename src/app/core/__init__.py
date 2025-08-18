@@ -1,4 +1,4 @@
 # src\app\core\__init__.py
-from app.core.thread_manager import ThreadManager
+from app.core.thread_manager import thread_manager
 
-__all__ = ["ThreadManager"]
+__all__ = ["thread_manager"]

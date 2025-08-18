@@ -2,7 +2,7 @@
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage
 from app.graphs.state import CustomState
-from app.utils.logger import logger   # use the shared logger
+from app.lib.logger import logger   # use the shared logger
 
 def onboarding_node(state: CustomState):
     msgs = state["messages"] + [{"role": "assistant", "content": "Home module ready. Say 'company' or 'product'."}]

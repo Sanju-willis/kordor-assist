@@ -1,19 +1,11 @@
-# src/app/core/thread_manager.py
+# src\app\core\thread_manager.py
 import json
 import uuid
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, Optional
-from app.utils import logger
-
-
-@dataclass
-class ThreadMeta:
-    thread_id: str
-    module: str
-    thread_type: str  # "module" | "company" | "product"
-    parent_thread_id: Optional[str] = None
-    entity_id: Optional[str] = None
+from app.lib import logger
+from app.models import ThreadMeta
 
 
 class ThreadManager:
@@ -66,7 +58,9 @@ class ThreadManager:
 
         sub_norm = (sub_type or "").strip().lower()
         if sub_norm in {"company", "product"} and not entity_id:
-            raise ValueError("entity_id is required for sub_type 'company' or 'product'")
+            raise ValueError(
+                "entity_id is required for sub_type 'company' or 'product'"
+            )
 
         thread_id = f"{parent.module}_{sub_norm}_{uuid.uuid4().hex[:6]}"
         self._threads[thread_id] = ThreadMeta(

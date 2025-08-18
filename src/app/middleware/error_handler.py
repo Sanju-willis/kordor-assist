@@ -2,7 +2,7 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from app.utils.logger import logger
+from app.lib.logger import logger
 import time
 
 async def error_handling_middleware(request: Request, call_next):
