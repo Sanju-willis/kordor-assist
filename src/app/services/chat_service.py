@@ -1,49 +1,18 @@
 # src\app\services\chat_service.py
-import sqlite3
 from typing import cast
-from pathlib import Path
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.checkpoint.sqlite import SqliteSaver
 from app.models import ThreadMeta
-from app.graphs import (
-    build_social_workflow,
-    build_analytics_workflow,
-    build_home_workflow,
-)
+from app.core.runtime import get_app
 from app.lib import logger  # use shared logger
-
-
-def get_checkpointer() -> SqliteSaver:
-    db_path = Path(".data/langraph.sqlite")
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path), check_same_thread=False)
-    return SqliteSaver(conn)
-
-
-def get_workflow(module: str):
-    workflows = {
-        "home": build_home_workflow,
-        "social": build_social_workflow,
-        "analytics": build_analytics_workflow,
-    }
-    builder = workflows.get(module.lower())
-    if not builder:
-        raise ValueError(f"Unknown module: {module}")
-    return builder()
 
 
 class ChatService:
     @staticmethod
     async def process_message(thread_id: str, meta: ThreadMeta, user_text: str) -> str:
         try:
-            #logger.info(f"process_message thread={thread_id} type={meta.thread_type}")
-            #logger.debug(f"user_text='{user_text}'")
-            print(f"service: {thread_id}, anemdnd{meta}, aaaa{user_text}")
-
-            # Build workflow once per call (consider caching later)
-            wf = get_workflow(meta.module)
-            app = wf.compile(checkpointer=get_checkpointer())
+        
+            app = get_app(meta.module)
 
             # Stage by thread type
             stage = (

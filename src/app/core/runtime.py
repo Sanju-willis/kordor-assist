@@ -3,13 +3,13 @@
 import sqlite3
 from pathlib import Path
 from langgraph.checkpoint.sqlite import SqliteSaver
+from app.lib import logger
 
 from app.graphs import (
     build_home_workflow,
     build_social_workflow,
     build_analytics_workflow,
 )
-
 
 # 1. Create SQLite connection ONCE
 _db_path = Path(".data/langraph.sqlite")
@@ -31,4 +31,6 @@ def get_app(module: str):
     if module not in APP_REGISTRY:
         raise ValueError(f"Unknown module: {module}")
     return APP_REGISTRY[module]
-print("[✔] LangGraph apps compiled and ready")
+
+
+logger.info("✔ LangGraph apps compiled and ready")

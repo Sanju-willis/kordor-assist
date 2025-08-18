@@ -3,7 +3,7 @@ poetry run uvicorn app.main:app --reload
 
 PYTHONPATH=. python scripts/insert_conversation.py
 PYTHONPATH=./ python scripts/view_checkpoints.py
-
+$ python scripts/show_checkpoint_columns.py
 
 
 # Dependencies 
