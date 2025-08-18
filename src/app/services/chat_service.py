@@ -39,6 +39,7 @@ class ChatService:
         try:
             #logger.info(f"process_message thread={thread_id} type={meta.thread_type}")
             #logger.debug(f"user_text='{user_text}'")
+            print(f"service: {thread_id}, anemdnd{meta}, aaaa{user_text}")
 
             # Build workflow once per call (consider caching later)
             wf = get_workflow(meta.module)
