@@ -86,3 +86,4 @@ Thumbs.db
 .env.development
 .env.test
 .env.production
+commands.md

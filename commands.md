@@ -27,6 +27,11 @@ nodes - 🚦🧩
 agents - 🤖
 tools - 🛠️
 
+# settings. VS code 
+1. settings.json
+2. **/.gitignore - exclude
+
+
 
 # 📄 .gitignore rules (explained)
 scripts/                      # Ignore 'scripts' folder in root
