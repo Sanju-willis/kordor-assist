@@ -4,9 +4,9 @@ import uuid
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, Optional
+
 from app.lib import logger
 from app.models import ThreadMeta
-
 
 
 class ThreadManager:
@@ -33,47 +33,47 @@ class ThreadManager:
             payload = {k: asdict(v) for k, v in self._threads.items()}
             with tmp.open("w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2, ensure_ascii=False)
-            tmp.replace(self.db_file)  # atomic-ish write on most OSes
+            tmp.replace(self.db_file)
             logger.debug(f"saved threads: {len(self._threads)}")
         except Exception as e:
             logger.error(f"failed to save threads: {e}", exc_info=True)
 
-
-    def create_module_thread(self, module: str) -> str:
-        module_norm = (module or "").strip().lower()
-        if not module_norm:
-            raise ValueError("module is required")
-        thread_id = f"{module_norm}_{uuid.uuid4().hex[:6]}"
-        self._threads[thread_id] = ThreadMeta(
-            thread_id=thread_id, module=module_norm, thread_type="module"
-        )
-        self._save_threads()
-        logger.info(f"created module thread: {thread_id}")
-        return thread_id
-
-    def create_sub_thread(
-        self, parent_thread_id: str, sub_type: str, entity_id: Optional[str] = None
-    ) -> str:
-        parent = self._threads.get(parent_thread_id)
-        if not parent:
-            raise ValueError(f"parent thread not found: {parent_thread_id}")
-
+    def create_thread(self, sub_type: str, parent_thread_id: Optional[str] = None,
+                     entity_id: Optional[str] = None) -> str:
         sub_norm = (sub_type or "").strip().lower()
-        if sub_norm in {"company", "product"} and not entity_id:
-            raise ValueError(
-                "entity_id is required for sub_type 'company' or 'product'"
-            )
+        if not sub_norm:
+            raise ValueError("sub_type is required")
 
-        thread_id = f"{parent.module}_{sub_norm}_{uuid.uuid4().hex[:6]}"
-        self._threads[thread_id] = ThreadMeta(
-            thread_id=thread_id,
-            module=parent.module,
-            thread_type=sub_norm,
-            parent_thread_id=parent_thread_id,
-            entity_id=entity_id,
-        )
+        # Creating sub-thread (has parent)
+        if parent_thread_id:
+            parent = self._threads.get(parent_thread_id)
+            if not parent:
+                raise ValueError(f"parent thread not found: {parent_thread_id}")
+
+            if sub_norm in {"company", "product"} and not entity_id:
+                raise ValueError("entity_id is required for sub_type 'company' or 'product'")
+
+            thread_id = f"{parent.module}_{sub_norm}_{uuid.uuid4().hex[:6]}"
+            self._threads[thread_id] = ThreadMeta(
+                thread_id=thread_id,
+                module=parent.module,
+                thread_type=sub_norm,
+                parent_thread_id=parent_thread_id,
+                entity_id=entity_id,
+            )
+            logger.info(f"created sub-thread: {thread_id} (parent={parent_thread_id})")
+
+        # Creating module thread (home as sub_type)
+        else:
+            thread_id = f"{sub_norm}_{uuid.uuid4().hex[:6]}"
+            self._threads[thread_id] = ThreadMeta(
+                thread_id=thread_id,
+                module=sub_norm,
+                thread_type="module"
+            )
+            logger.info(f"created module thread: {thread_id}")
+
         self._save_threads()
-        logger.info(f"created sub-thread: {thread_id} (parent={parent_thread_id})")
         return thread_id
 
     def get_thread(self, thread_id: str) -> Optional[ThreadMeta]:

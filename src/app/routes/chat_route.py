@@ -14,28 +14,22 @@ router = APIRouter()
 
 @router.post("/create-thread")
 async def create_thread(body: ThreadRequest, request: Request):
-    auth = get_user_from_jwt(request)
+   auth = get_user_from_jwt(request)
+   print(auth)
    
-    print(auth)
-
-    thread_id = thread_manager.create_module_thread(body.module)
-    return {"thread_id": thread_id, "module": body.module}
-
-
-@router.post("/create-sub-thread")
-async def create_sub_thread(body: ThreadRequest, request: Request):
-    auth = get_user_from_jwt(request)
-    
-    print(auth)
-    if body.sub_type in ("company", "product") and body.entity_id is None:
-        raise HTTPException(status_code=422, detail="entity_id is required for this sub_type")
-
-    thread_id = thread_manager.create_sub_thread(
-        body.parent_thread_id,
-        body.sub_type,
-        body.entity_id,
-    )
-    return {"thread_id": thread_id, "parent_thread_id": body.parent_thread_id}
+   # Create thread (module or sub-thread based on parent_thread_id presence)
+   if body.parent_thread_id:
+       # Creating sub-thread
+       thread_id = thread_manager.create_thread(
+           body.sub_type,
+           body.parent_thread_id,
+           body.entity_id,
+       )
+       return {"thread_id": thread_id, "parent_thread_id": body.parent_thread_id}
+   else:
+       # Creating module thread
+       thread_id = thread_manager.create_thread(body.module or body.sub_type)
+       return {"thread_id": thread_id, "module": body.module or body.sub_type}
 
 
 
