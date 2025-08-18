@@ -1,5 +1,4 @@
 # src\app\graphs\nodes\home_nodes.py
-# src/app/graphs/home_nodes.py
 from app.graphs.state import CustomState
 
 def onboarding_node(state: CustomState):

@@ -57,7 +57,7 @@ def build_home_workflow() -> StateGraph:
     wf.add_conditional_edges("onboarding", route_by_message, {
         "company_agent": "company_agent",
         "product_agent": "product_agent",
-        "onboarding": END
+        "onboarding": "onboarding",  # stay in onboarding until switch
     })
 
     wf.add_edge("company_agent", END)
