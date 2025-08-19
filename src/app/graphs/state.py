@@ -6,7 +6,7 @@ from langgraph.graph import MessagesState
 
 class CustomState(MessagesState):
     module: Literal["home", "social", "analytics"]
-    stage: NotRequired[str]
+    stage: str
     user_id: NotRequired[str]
     company_id: NotRequired[str]
     product_id: NotRequired[str]

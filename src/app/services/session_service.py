@@ -1,7 +1,7 @@
 # src\app\services\session_service.py
 from app.core import thread_manager, get_app
 from app.schemas import ThreadRequest
-from app.graphs import CustomState
+from app.graphs.state import CustomState
 
 
 class SessionService:
@@ -31,7 +31,7 @@ class SessionService:
         state: CustomState = {
             "user_id": user_id,
             "company_id": company_id,
-            "module": body.module,
+            "module": body.module.value,
             "stage": stage,
             "messages": [],
             "context": context,

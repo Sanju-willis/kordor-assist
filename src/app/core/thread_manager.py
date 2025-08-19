@@ -1,44 +1,17 @@
 # src\app\core\thread_manager.py
-
-import json
-import hashlib
-from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional, Dict
 from app.lib import logger
 from app.models import ThreadMeta
 from app.middleware import ValidationError, NotFoundError
 from app.utils.hash_utils import generate_thread_id
+from app.utils.thread_storage import ThreadStorage
 
 
 class ThreadManager:
     def __init__(self) -> None:
-        self.db_file = Path(".data/threads.json")
-        self._threads: Dict[str, ThreadMeta] = self._load_threads()
-        logger.info(f"ThreadManager ready (threads={len(self._threads)})")
-
-    def _load_threads(self) -> Dict[str, ThreadMeta]:
-        if not self.db_file.exists():
-            return {}
-        try:
-            with self.db_file.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            return {k: ThreadMeta(**v) for k, v in data.items()}
-        except Exception as e:
-            logger.error(f"Failed to load threads: {e}", exc_info=True)
-            return {}
-
-    def _save_threads(self) -> None:
-        try:
-            self.db_file.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.db_file.with_suffix(".json.tmp")
-            payload = {k: asdict(v) for k, v in self._threads.items()}
-            with tmp.open("w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2, ensure_ascii=False)
-            tmp.replace(self.db_file)
-            logger.debug(f"Saved threads: {len(self._threads)}")
-        except Exception as e:
-            logger.error(f"Failed to save threads: {e}", exc_info=True)
+        self.storage = ThreadStorage(Path(".data/threads.json"))
+        logger.info(f"ThreadManager ready (threads={self.storage.thread_count()})")
 
     def create_thread(
         self,
@@ -48,7 +21,7 @@ class ThreadManager:
         entity_id: Optional[str] = None,
     ) -> str:
         if parent_thread_id:
-            parent = self._threads.get(parent_thread_id)
+            parent = self.storage.get_thread(parent_thread_id)
             if not parent:
                 raise NotFoundError("Parent thread")
 
@@ -75,21 +48,14 @@ class ThreadManager:
         else:
             logger.info(f"Created module thread: {thread_id}")
 
-        self._threads[thread_id] = thread_meta
+        self.storage.add_thread(thread_meta)
         return thread_id
 
     def get_thread(self, thread_id: str) -> ThreadMeta:
-        thread = self._threads.get(thread_id)
-        if not thread:
-            raise NotFoundError("Thread")
-        logger.debug(f"get_thread hit: {thread_id} -> {thread.thread_type}")
-        return thread
+        return self.storage.get_thread(thread_id)
 
     def list_all_threads(self) -> Dict[str, ThreadMeta]:
-        return dict(self._threads)
-
-    def _short_hash(self, input_str: str) -> str:
-        return hashlib.md5(input_str.encode()).hexdigest()[:6]
+        return self.storage.get_all_threads()
 
 
 # Global instance
