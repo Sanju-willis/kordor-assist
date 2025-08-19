@@ -1,4 +1,4 @@
-# src\app\graphs\analytics_graph.py
+# src\app\ai\graphs\analytics_graph.py
 from langgraph.graph import StateGraph, END
 from app.types.graph_state import CustomState
 

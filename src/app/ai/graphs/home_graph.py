@@ -1,8 +1,8 @@
-# src\app\graphs\home_graph.py
+# src\app\ai\graphs\home_graph.py
 from langgraph.graph import StateGraph, END
 from app.lib import logger
 from app.types.graph_state import CustomState
-from app.graphs.nodes.home_nodes import  onboarding_node, company_node, product_node
+from app.ai.nodes import  onboarding_node, company_node, product_node
 
 
 def build_home_workflow() -> StateGraph:
