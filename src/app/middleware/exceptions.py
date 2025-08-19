@@ -1,5 +1,4 @@
 # src\app\middleware\exceptions.py
-
 class BaseError(Exception):
     status_code: int = 500
 
@@ -22,3 +21,8 @@ class NotFoundError(BaseError):
 
 class ServiceError(BaseError):
     status_code = 502
+
+
+# src/app/exceptions.py
+class ConfigError(BaseError):
+    status_code = 500

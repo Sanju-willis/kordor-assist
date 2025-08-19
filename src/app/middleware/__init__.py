@@ -5,6 +5,7 @@ from app.middleware.exceptions import (
     NotFoundError,
     ServiceError,
     BaseError,
+    ConfigError,
 )
 
 from app.middleware.error_handler import error_handling_middleware
@@ -17,5 +18,6 @@ __all__ = [
     "NotFoundError",
     "ServiceError",
     "BaseError",
+    "ConfigError",
     "logging_middleware",
 ]

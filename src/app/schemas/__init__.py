@@ -1,4 +1,4 @@
 # src\app\schemas\__init__.py
-from .thread_schema import ThreadRequest, ThreadResponse,  SendMessageRequest
+from .thread_schema import ThreadRequest, ThreadResponse,  SendMessageRequest, AuthContext
 
-__all__ = ["ThreadRequest", "ThreadResponse","SendMessageRequest"]
+__all__ = ["ThreadRequest", "ThreadResponse","SendMessageRequest", "AuthContext"]

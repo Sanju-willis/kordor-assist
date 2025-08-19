@@ -1,25 +1,31 @@
 # src\app\schemas\thread_schema.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal
+from enum import Enum
 
-Module = Literal["home", "social", "analytics"]
-ThreadType = Literal["module", "company", "product"]
 
+class ModuleEnum(str, Enum):
+    home = "home"
+    social = "social"
+    analytics = "analytics"
+
+class ThreadTypeEnum(str, Enum):
+    module = "module"
+    company = "company"
+    product = "product"
 
 class ThreadRequest(BaseModel):
-    module: Module
-    thread_type: ThreadType
+    module: ModuleEnum
+    thread_type: ThreadTypeEnum
     entity_id: Optional[str] = None
-    parent_thread_id: Optional[str] = None 
+    parent_thread_id: Optional[str] = None
     
 
 class ThreadResponse(BaseModel):
     thread_id: str
-    module: Module
+    module: ModuleEnum
     thread_type: Literal["module", "company", "product"]
     parent_thread_id: Optional[str] = None
-
-
 
 
 class SendMessageRequest(BaseModel):
@@ -30,14 +36,18 @@ class SendMessageRequest(BaseModel):
 class SendMessageResponse(BaseModel):
     response: str
     thread_id: str
-    module: Module
+    module: ModuleEnum
     thread_type: str
 
 
-class StartSessionRequest(BaseModel):
-    module: Module
-    thread_type: ThreadType
-    entity_id: Optional[str] = None
-    parent_thread_id: Optional[str] = None 
 
+class AuthContext(BaseModel):
+    user_id: str
+    company_id: str
 
+    @field_validator("user_id", "company_id")
+    @classmethod
+    def not_empty(cls, v, info):
+        if not v:
+            raise ValueError(f"Invalid token: missing {info.field_name}")
+        return v

@@ -8,6 +8,7 @@ from typing import Dict, Optional
 from app.lib import logger
 from app.models import ThreadMeta
 from app.middleware import ValidationError, NotFoundError
+from app.utils.hash_utils import generate_thread_id
 
 
 class ThreadManager:
@@ -46,10 +47,6 @@ class ThreadManager:
         parent_thread_id: Optional[str] = None,
         entity_id: Optional[str] = None,
     ) -> str:
-        thread_type = (thread_type or "").strip().lower()
-        if not thread_type:
-            raise ValidationError("thread_type is required")
-
         if parent_thread_id:
             parent = self._threads.get(parent_thread_id)
             if not parent:
@@ -60,35 +57,25 @@ class ThreadManager:
                     "entity_id is required for sub_type 'company' or 'product'"
                 )
 
-            hash_input = (
-                f"{parent.module}_{thread_type}_{parent_thread_id}_{entity_id or ''}"
-            )
-            thread_id = f"{parent.module}_{thread_type}_{self._short_hash(hash_input)}"
+        # Generate thread ID (works for both cases)
+        thread_id = generate_thread_id(module, thread_type, parent_thread_id, entity_id)
 
-            thread_meta = ThreadMeta(
-                thread_id=thread_id,
-                module=parent.module,
-                thread_type=thread_type,
-                parent_thread_id=parent_thread_id,
-                entity_id=entity_id,
-            )
+        # Create thread metadata
+        thread_meta = ThreadMeta(
+            thread_id=thread_id,
+            module=module,
+            thread_type=thread_type,
+            parent_thread_id=parent_thread_id,
+            entity_id=entity_id,
+        )
+
+        # Log appropriate message
+        if parent_thread_id:
             logger.info(f"Created sub-thread: {thread_id} (parent={parent_thread_id})")
-
         else:
-            hash_input = f"{module}_{thread_type}"
-            thread_id = f"{module}_{thread_type}_{self._short_hash(hash_input)}"
-
-            thread_meta = ThreadMeta(
-                thread_id=thread_id,
-                module=module,
-                thread_type=thread_type,
-                parent_thread_id=None,
-                entity_id=None,
-            )
             logger.info(f"Created module thread: {thread_id}")
 
         self._threads[thread_id] = thread_meta
-        self._save_threads()
         return thread_id
 
     def get_thread(self, thread_id: str) -> ThreadMeta:

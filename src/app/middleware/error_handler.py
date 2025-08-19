@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.middleware.exceptions import BaseError
 from app.lib.logger import logger
+from jose import JWTError, ExpiredSignatureError
 
 async def error_handling_middleware(request: Request, call_next):
     try:
@@ -23,6 +24,14 @@ async def error_handling_middleware(request: Request, call_next):
             status_code=e.status_code,
             content={"error": e.detail}
         )
+    except ExpiredSignatureError as e:
+        logger.error(f'{request.method} {request.url.path} 401 - token expired{e}')
+        return JSONResponse(status_code=401, content={"error": "Token expired"})
+    
+    except JWTError as e:
+        logger.error(f'{request.method} {request.url.path} 401 - invalid token: {e}')
+        return JSONResponse(status_code=401, content={"error": "Invalid token"})
+
 
     except BaseError as e:
         logger.error(f'{request.method} {request.url.path} {e.status_code} - {e.message}')
