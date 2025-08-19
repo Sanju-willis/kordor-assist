@@ -4,8 +4,7 @@ from typing import Optional, Dict
 from app.lib import logger
 from app.models import ThreadMeta
 from app.middleware import ValidationError, NotFoundError
-from app.utils.hash_utils import generate_thread_id
-from app.utils.thread_storage import ThreadStorage
+from app.utils import ThreadStorage, generate_thread_id
 
 
 class ThreadManager:
@@ -15,8 +14,10 @@ class ThreadManager:
 
     def create_thread(
         self,
-        thread_type: str,
+        user_id: str,
+        company_id: str,
         module: str,
+        thread_type: str,
         parent_thread_id: Optional[str] = None,
         entity_id: Optional[str] = None,
     ) -> str:
@@ -31,7 +32,9 @@ class ThreadManager:
                 )
 
         # Generate thread ID (works for both cases)
-        thread_id = generate_thread_id(module, thread_type, parent_thread_id, entity_id)
+        thread_id = generate_thread_id(
+            user_id, company_id, module, thread_type, parent_thread_id, entity_id
+        )
 
         # Create thread metadata
         thread_meta = ThreadMeta(

@@ -2,13 +2,16 @@
 import hashlib
 from typing import Optional
 
+
 def generate_thread_id(
+    user_id: str,
+    company_id: str,
     module: str,
     thread_type: str,
     parent_thread_id: Optional[str] = None,
     entity_id: Optional[str] = None,
 ) -> str:
-    key_parts = [module, thread_type]
+    key_parts = [user_id, company_id, module, thread_type]
 
     if parent_thread_id:
         key_parts.append(parent_thread_id)

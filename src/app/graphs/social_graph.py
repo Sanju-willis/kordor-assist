@@ -1,6 +1,6 @@
 # src\app\graphs\social_graph.py
 from langgraph.graph import StateGraph, END
-from app.graphs.state import CustomState
+from app.types.graph_state import CustomState
 
 def social_root(state: CustomState):
     msgs = state["messages"] + [{"role":"assistant","content":"Social module."}]

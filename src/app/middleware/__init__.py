@@ -1,5 +1,5 @@
 # src\app\middleware\__init__.py
-from app.middleware.exceptions import (
+from app.exceptions import (
     ValidationError,
     AuthError,
     NotFoundError,

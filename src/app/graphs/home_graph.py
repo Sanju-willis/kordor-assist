@@ -1,7 +1,7 @@
 # src\app\graphs\home_graph.py
 from langgraph.graph import StateGraph, END
 from app.lib import logger
-from app.graphs.state import CustomState
+from app.types.graph_state import CustomState
 from app.graphs.nodes.home_nodes import  onboarding_node, company_node, product_node
 
 
@@ -34,7 +34,7 @@ def build_home_workflow() -> StateGraph:
         {
             "company_agent": "company_agent",
             "product_agent": "product_agent",
-            "onboarding": "onboarding",
+            "onboarding": END, 
         },
     )
 

@@ -1,132 +1,73 @@
-#!/usr/bin/env python3
 import sqlite3
 import msgpack
-import json
-from typing import Any, Dict, List, Optional
+from app.config.settings import settings
 
-DB_PATH = ".data/langraph.sqlite"
+DB_PATH = settings.LANGRAPH_DB_PATH
 
-def _truncate(text: str, n: int = 140) -> str:
-    if text is None:
-        return ""
-    text = str(text).strip()
-    return text if len(text) <= n else text[: n - 1] + "…"
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
 
-def _summarize_messages(raw: Any) -> Dict[str, Any]:
-    """
-    Return only high-signal info about messages:
-    - total count
-    - last human preview (if available)
-    - last assistant preview (if available)
-    We avoid importing LangChain classes; handle dicts or generic shapes.
-    """
-    msgs: List[Any] = raw if isinstance(raw, list) else []
-    out: Dict[str, Any] = {"count": len(msgs)}
+# Step 1: Get latest checkpoint_id per thread
+cursor.execute("""
+    SELECT thread_id, MAX(checkpoint_id) as checkpoint_id
+    FROM checkpoints
+    GROUP BY thread_id
+""")
+latest_ids = cursor.fetchall()
 
-    # Try to extract previews if items look like dicts {"role","content"}
-    def _role_and_content(m: Any) -> Optional[Dict[str, str]]:
-        # dict shape
-        if isinstance(m, dict):
-            role = m.get("role") or m.get("type")
-            content = m.get("content")
-            if isinstance(content, (str, int, float)):
-                return {"role": str(role), "content": str(content)}
-        # LangChain BaseMessage-like (duck typed)
-        if hasattr(m, "type") and hasattr(m, "content"):
-            try:
-                return {"role": str(getattr(m, "type")), "content": str(getattr(m, "content"))}
-            except Exception:
-                pass
-        # Stored as pair [<ver>, <payload>] from some checkpoint writers
-        if isinstance(m, list) and len(m) == 2 and isinstance(m[1], str):
-            # Not decoding binary payloads; just mark as packed
-            return {"role": "packed", "content": "<binary message payload>"}
-        return None
+# Step 2: Fetch actual checkpoint blobs
+checkpoints = []
+for thread_id, checkpoint_id in latest_ids:
+    cursor.execute("SELECT checkpoint FROM checkpoints WHERE checkpoint_id = ?", (checkpoint_id,))
+    row = cursor.fetchone()
+    if row:
+        blob = row[0]
+        checkpoints.append((thread_id, checkpoint_id, row[0]))
 
-    last_human = None
-    last_ai = None
-    for m in msgs:
-        rc = _role_and_content(m)
-        if not rc:
-            continue
-        role = (rc.get("role") or "").lower()
-        if role in ("human", "user"):
-            last_human = _truncate(rc.get("content", ""))
-        elif role in ("ai", "assistant", "bot"):
-            last_ai = _truncate(rc.get("content", ""))
+print(f"🧠 Found {len(checkpoints)} latest checkpoints (1 per thread)\n")
 
-    if last_human:
-        out["last_human"] = last_human
-    if last_ai:
-        out["last_assistant"] = last_ai
+# Mapping for pretty thread type names
+thread_type_map = {
+    "company_profile": "company",
+    "product": "product",
+    "service": "service"
+}
 
-    # If everything looked binary/opaque, keep it minimal.
-    if "last_human" not in out and "last_assistant" not in out and len(msgs) > 0:
-        out["note"] = "messages are packed/opaque; previews unavailable"
-
-    return out
-
-def _clean_state(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Reduce the raw checkpoint to the bits you actually care about.
-    """
-    cv = state.get("channel_values", {}) if isinstance(state, dict) else {}
-    context = cv.get("context", {}) if isinstance(cv, dict) else {}
-
-    cleaned = {
-        # top-level, if present
-        "ts": state.get("ts"),
-        "id": state.get("id"),
-        # core channels
-        "module": cv.get("module"),
-        "stage": cv.get("stage"),
-        "user_id": cv.get("user_id"),
-        "company_id": cv.get("company_id"),
-        "context": {
-            "thread_type": context.get("thread_type"),
-            "entity_id": context.get("entity_id"),
-        },
-        # high-signal message summary
-        "messages": _summarize_messages(cv.get("messages")),
-    }
-
-    # Include updated channels if present
-    if isinstance(state.get("updated_channels"), list):
-        cleaned["updated_channels"] = state["updated_channels"]
-
-    # Keep branch hints only if set (helps debugging routing)
-    for k in list(cv.keys()):
-        if k.startswith("branch:to:") and cv.get(k) is not None:
-            cleaned.setdefault("branches", {})[k] = cv.get(k)
-
-    return cleaned
-
-def main(limit: int = 5):
-    conn = sqlite3.connect(DB_PATH)
+# Step 3: Decode and print state
+for thread_id, checkpoint_id, blob in checkpoints:
     try:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT thread_id, checkpoint_id, checkpoint
-            FROM checkpoints
-            ORDER BY ROWID DESC
-            LIMIT ?
-            """,
-            (limit,),
-        )
-        rows = cursor.fetchall()
+        data = msgpack.unpackb(blob, raw=False)
+        values = data.get("channel_values", {})
 
-        for thread_id, checkpoint_id, blob in rows:
-            print(f"\n🧵 Thread ID: {thread_id}")
-            print(f"🧠 Checkpoint: {checkpoint_id}")
-            try:
-                state = msgpack.unpackb(blob, raw=False)
-                cleaned = _clean_state(state if isinstance(state, dict) else {})
-                print(json.dumps(cleaned, indent=2, ensure_ascii=False, default=str))
-            except Exception as e:
-                print(json.dumps({"error": f"failed to decode checkpoint: {e}"}, indent=2))
-    finally:
-        conn.close()
+        # Flatten __start__ if present
+        if "__start__" in values:
+            values.update(values.pop("__start__"))
 
-if __name__ == "__main__":
-    main()
+        print(f"🧵 Thread ID: {thread_id}")
+        print(f"🆔 Checkpoint ID: {checkpoint_id}")
+        print("📦 State Summary:")
+
+        summary_keys = ["user_id", "company_id", "module", "stage", "step", "next_action", "messages"]
+        for key in summary_keys:
+            if key in values:
+                val = values[key]
+                if key == "messages":
+                    print(f"   🗨️ Messages: {len(val)}")
+                    for i, m in enumerate(val[-2:], 1):
+                        print(f"     {i}. [{m.get('role')}] {m.get('content')[:80]}...")
+                else:
+                    print(f"   {key}: {val}")
+
+        # Extract and map thread type from context
+        context = values.get("context", {})
+        thread_type = values.get("thread_type", "unknown")   # ✅ Correct!
+
+        print("   Context:")
+        for k, v in context.items():
+         print(f"     {k}: {v}")
+        print(f"   thread_type: {thread_type}")
+
+        print("=" * 80)
+
+    except Exception as e:
+        print(f"❌ Failed to decode checkpoint {checkpoint_id}: {e}")

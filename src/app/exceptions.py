@@ -1,4 +1,4 @@
-# src\app\middleware\exceptions.py
+# src\app\exceptions.py
 class BaseError(Exception):
     status_code: int = 500
 

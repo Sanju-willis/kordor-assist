@@ -5,7 +5,7 @@ from pathlib import Path
 from langgraph.checkpoint.sqlite import SqliteSaver
 from app.lib import logger
 from app.middleware import ValidationError
-
+from app.config.settings import settings
 from app.graphs import (
     build_home_workflow,
     build_social_workflow,
@@ -13,7 +13,7 @@ from app.graphs import (
 )
 
 # 1. Create SQLite connection ONCE
-_db_path = Path(".data/langraph.sqlite")
+_db_path = Path(settings.LANGRAPH_DB_PATH)
 _db_path.parent.mkdir(parents=True, exist_ok=True)
 _conn = sqlite3.connect(str(_db_path), check_same_thread=False)
 CHECKPOINTER = SqliteSaver(_conn)

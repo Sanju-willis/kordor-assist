@@ -9,17 +9,19 @@ class ModuleEnum(str, Enum):
     social = "social"
     analytics = "analytics"
 
+
 class ThreadTypeEnum(str, Enum):
     module = "module"
     company = "company"
     product = "product"
+
 
 class ThreadRequest(BaseModel):
     module: ModuleEnum
     thread_type: ThreadTypeEnum
     entity_id: Optional[str] = None
     parent_thread_id: Optional[str] = None
-    
+
 
 class ThreadResponse(BaseModel):
     thread_id: str
@@ -38,7 +40,6 @@ class SendMessageResponse(BaseModel):
     thread_id: str
     module: ModuleEnum
     thread_type: str
-
 
 
 class AuthContext(BaseModel):

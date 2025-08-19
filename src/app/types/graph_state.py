@@ -1,13 +1,15 @@
-# src\app\graphs\state.py
-from typing import Literal, Dict, Any
+# src\app\types\graph_state.py
+from typing import Dict, Any, Literal
 from typing_extensions import NotRequired
 from langgraph.graph import MessagesState
 
+ModuleStr = Literal["home", "social", "analytics"]
 
 class CustomState(MessagesState):
-    module: Literal["home", "social", "analytics"]
+    user_id: str
+    company_id: str
+    module: ModuleStr      
+    thread_type: str
     stage: str
-    user_id: NotRequired[str]
-    company_id: NotRequired[str]
     product_id: NotRequired[str]
     context: NotRequired[Dict[str, Any]]
