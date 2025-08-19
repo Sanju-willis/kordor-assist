@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 from langgraph.checkpoint.sqlite import SqliteSaver
 from app.lib import logger
+from app.middleware import ValidationError
 
 from app.graphs import (
     build_home_workflow,
@@ -29,8 +30,9 @@ APP_REGISTRY = {
 def get_app(module: str):
     module = module.lower()
     if module not in APP_REGISTRY:
-        raise ValueError(f"Unknown module: {module}")
+        allowed = ", ".join(APP_REGISTRY.keys())
+        raise ValidationError(f"Unknown module: {module}. Allowed: {allowed}")
     return APP_REGISTRY[module]
 
 
-logger.info("✔ LangGraph apps compiled and ready")
+logger.info("✔ LangGraph apps compiled")

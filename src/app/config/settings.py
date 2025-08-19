@@ -1,13 +1,9 @@
 # src\app\config\settings.py
-from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    JWT_SECRET: str = Field(..., env="JWT_SECRET")
-    JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
-settings = Settings()
+settings: Settings = Settings()  # type: ignore[call-arg]

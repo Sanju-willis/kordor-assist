@@ -1,22 +1,43 @@
 # src\app\middleware\error_handler.py
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from app.middleware.exceptions import BaseError
 from app.lib.logger import logger
-import time
 
 async def error_handling_middleware(request: Request, call_next):
-    start = time.perf_counter()
-    request_line = f'{request.method} {request.url.path} HTTP/{request.scope.get("http_version","1.1")}'
     try:
-        response = await call_next(request)
-        elapsed_ms = int((time.perf_counter() - start) * 1000)
-        msg = f'"{request_line}" {response.status_code} {elapsed_ms}ms'
-        (logger.error if response.status_code >= 400 else logger.info)(msg)
-        return response
+        return await call_next(request)
+
+    except RequestValidationError as e:
+        logger.error(f'{request.method} {request.url.path} 422 - validation error: {e}')
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation failed", "details": e.errors()}
+        )
+
     except StarletteHTTPException as e:
-        logger.error(f'"{request_line}" {e.status_code} - {e.detail}')
-        return JSONResponse(status_code=e.status_code, content={"error": e.detail})
+        logger.error(f'{request.method} {request.url.path} {e.status_code} - {e.detail}')
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"error": e.detail}
+        )
+
+    except BaseError as e:
+        logger.error(f'{request.method} {request.url.path} {e.status_code} - {e.message}')
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"error": e.message}
+        )
+
+    except ValueError as e:
+        logger.error(f'{request.method} {request.url.path} 400 - {e}')
+        return JSONResponse(status_code=400, content={"error": str(e)})
+
     except Exception as e:
-        logger.error(f'"{request_line}" 500 - {e}', exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
+        logger.error(f'{request.method} {request.url.path} 500 - {e}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal Server Error"}
+        )

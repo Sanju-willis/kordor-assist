@@ -1,4 +1,5 @@
 # src\app\core\thread_manager.py
+
 import json
 import hashlib
 from dataclasses import asdict
@@ -6,6 +7,7 @@ from pathlib import Path
 from typing import Dict, Optional
 from app.lib import logger
 from app.models import ThreadMeta
+from app.middleware import ValidationError, NotFoundError
 
 
 class ThreadManager:
@@ -44,35 +46,42 @@ class ThreadManager:
         parent_thread_id: Optional[str] = None,
         entity_id: Optional[str] = None,
     ) -> str:
-        sub_type = (thread_type or "").strip().lower()
-        if not sub_type:
-            raise ValueError("thread_type is required")
+        thread_type = (thread_type or "").strip().lower()
+        if not thread_type:
+            raise ValidationError("thread_type is required")
 
         if parent_thread_id:
             parent = self._threads.get(parent_thread_id)
             if not parent:
-                raise ValueError(f"Parent thread not found: {parent_thread_id}")
+                raise NotFoundError("Parent thread")
 
-            if sub_type in {"company", "product"} and not entity_id:
-                raise ValueError("entity_id is required for sub_type 'company' or 'product'")
+            if thread_type in {"company", "product"} and not entity_id:
+                raise ValidationError(
+                    "entity_id is required for sub_type 'company' or 'product'"
+                )
 
-            hash_input = f"{parent.module}_{sub_type}_{parent_thread_id}_{entity_id or ''}"
-            thread_id = f"{parent.module}_{sub_type}_{self._short_hash(hash_input)}"
+            hash_input = (
+                f"{parent.module}_{thread_type}_{parent_thread_id}_{entity_id or ''}"
+            )
+            thread_id = f"{parent.module}_{thread_type}_{self._short_hash(hash_input)}"
+
             thread_meta = ThreadMeta(
                 thread_id=thread_id,
                 module=parent.module,
-                thread_type=sub_type,
+                thread_type=thread_type,
                 parent_thread_id=parent_thread_id,
                 entity_id=entity_id,
             )
             logger.info(f"Created sub-thread: {thread_id} (parent={parent_thread_id})")
+
         else:
-            hash_input = f"{module}_{sub_type}"
-            thread_id = f"{module}_{sub_type}_{self._short_hash(hash_input)}"
+            hash_input = f"{module}_{thread_type}"
+            thread_id = f"{module}_{thread_type}_{self._short_hash(hash_input)}"
+
             thread_meta = ThreadMeta(
                 thread_id=thread_id,
                 module=module,
-                thread_type=sub_type,
+                thread_type=thread_type,
                 parent_thread_id=None,
                 entity_id=None,
             )
@@ -83,12 +92,11 @@ class ThreadManager:
         return thread_id
 
     def get_thread(self, thread_id: str) -> ThreadMeta:
-        t = self._threads.get(thread_id)
-        if not t:
-            logger.error(f"Thread not found: {thread_id}")
-            raise ValueError(f"Thread not found: {thread_id}")
-        logger.debug(f"get_thread hit: {thread_id} -> {t.thread_type}")
-        return t
+        thread = self._threads.get(thread_id)
+        if not thread:
+            raise NotFoundError("Thread")
+        logger.debug(f"get_thread hit: {thread_id} -> {thread.thread_type}")
+        return thread
 
     def list_all_threads(self) -> Dict[str, ThreadMeta]:
         return dict(self._threads)

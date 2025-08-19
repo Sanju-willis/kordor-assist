@@ -1,9 +1,19 @@
 # start up
+poetry run dev
 poetry run uvicorn app.main:app --reload
+
+# Git Bash / CMD
+poetry run python -m app.main
+
+
+
+poetry run uvicorn app.main:app --reload --no-access-log --log-level warning
 
 PYTHONPATH=. python scripts/insert_conversation.py
 PYTHONPATH=./ python scripts/view_checkpoints.py
 $ python scripts/show_checkpoint_columns.py
+poetry run python scripts/view_checkpoints.py
+
 
 
 # Dependencies 
