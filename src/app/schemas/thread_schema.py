@@ -1,31 +1,19 @@
 # src\app\schemas\thread_schema.py
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal
-from enum import Enum
-
-
-class ModuleEnum(str, Enum):
-    home = "home"
-    social = "social"
-    analytics = "analytics"
-
-
-class ThreadTypeEnum(str, Enum):
-    module = "module"
-    company = "company"
-    product = "product"
+from app.schemas.enums import Module, ThreadType
 
 
 class ThreadRequest(BaseModel):
-    module: ModuleEnum
-    thread_type: ThreadTypeEnum
+    module: Module
+    thread_type: ThreadType
     entity_id: Optional[str] = None
     parent_thread_id: Optional[str] = None
 
 
 class ThreadResponse(BaseModel):
     thread_id: str
-    module: ModuleEnum
+    module: Module
     thread_type: Literal["module", "company", "product"]
     parent_thread_id: Optional[str] = None
 
@@ -38,7 +26,7 @@ class SendMessageRequest(BaseModel):
 class SendMessageResponse(BaseModel):
     response: str
     thread_id: str
-    module: ModuleEnum
+    module: Module
     thread_type: str
 
 

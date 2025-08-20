@@ -6,7 +6,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from app.lib import logger
 from app.middleware import ValidationError
 from app.config.settings import settings
-from app.graphs import (
+from app.ai.graphs import (
     build_home_workflow,
     build_social_workflow,
     build_analytics_workflow,

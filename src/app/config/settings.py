@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DEBUG: bool
 
     LANGRAPH_DB_PATH: str
+    OPENAI_API_KEY: str
 
     JWT_SECRET: str
     JWT_ALGORITHM: str 
