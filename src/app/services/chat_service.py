@@ -10,6 +10,7 @@ class ChatService:
     @staticmethod
     async def process_message(thread_id: str, user_text: str) -> str:
         meta = thread_manager.get_thread(thread_id)
+
         app = get_app(meta.module)
 
         config: RunnableConfig = cast(
@@ -18,13 +19,13 @@ class ChatService:
         )
 
         result = app.invoke({"messages": [HumanMessage(content=user_text)]}, config=config)
-        msgs: list[BaseMessage] = result.get("messages", []) if isinstance(result, dict) else []
+        msgs: list[BaseMessage] = result.get("messages", [])
 
-        for msg in reversed(msgs):
-            if isinstance(msg, AIMessage):
-                return str(msg.content)
-            if isinstance(msg, dict) and msg.get("role") == "assistant":
-                return str(msg.get("content", ""))
+        # get last AI message if present
+        last_ai = next((m for m in reversed(msgs) if isinstance(m, AIMessage)), None)
+
+        if last_ai:
+            return str(last_ai.content)   #
 
         logger.warning("No assistant message found; returning default")
         return "Ready to help!"

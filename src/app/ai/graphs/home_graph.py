@@ -1,7 +1,8 @@
-# src/app/ai/graphs/home_graph.py
+# src\app\ai\graphs\home_graph.py
 from langgraph.graph import StateGraph, END
 from app.types.graph_state import CustomState
 from app.ai.nodes import onboarding_node, company_node, product_node
+
 
 def _last_is_ai(state: CustomState) -> bool:
     msgs = state.get("messages") or []
@@ -13,19 +14,22 @@ def _last_is_ai(state: CustomState) -> bool:
         return t == "ai"
     return isinstance(m, dict) and m.get("role") == "assistant"  # dict-style
 
+
 def route_by_stage(state: CustomState) -> str:
-    # Stop after assistant reply so service can return it to the user
     if _last_is_ai(state):
         return "END"
 
-    stage = str(state.get("stage") or "onboarding")
-    if stage in {"done", "onboarding_completed"}:
-        return "END"
-    if stage in ("company_ready", "onboarding_company"):
-        return "company_agent"
-    if stage in ("product_ready", "onboarding_products"):
-        return "product_agent"
-    return "onboarding"
+    stage = str(state.get("stage"))
+    stage_map = {
+        "company_ready": "company_agent",
+        "onboarding_company": "company_agent",
+        "product_ready": "product_agent",
+        "onboarding_products": "product_agent",
+        "done": "END",
+        "onboarding_completed": "END",
+    }
+    return stage_map.get(stage, "onboarding")
+
 
 def build_home_workflow() -> StateGraph:
     wf = StateGraph(CustomState)

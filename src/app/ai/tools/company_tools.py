@@ -1,4 +1,4 @@
-# src\app\graphs\tools\company_tools.py
+# src\app\ai\tools\company_tools.py
 # File: src/app/tools/company_tools.py  
 from langchain_core.tools import tool
 
